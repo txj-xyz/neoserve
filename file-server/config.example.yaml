@@ -1,0 +1,12 @@
+server:
+  port: "8080"
+
+paths:
+  public: "./public"
+  uploads: "./uploads"
+
+auth:
+  token: "your-secret-token"
+
+logging:
+  level: "DEBUG" # ERROR | DEBUG | INFO
