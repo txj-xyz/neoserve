@@ -1,0 +1,8 @@
+# Misc
+ssl/
+config.yaml
+
+# Volume things
+uploads/
+
+# Golang
