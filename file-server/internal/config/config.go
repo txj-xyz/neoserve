@@ -46,13 +46,16 @@ func LoadConfig(filePath string) (*Config, error) {
 	}
 	defer file.Close()
 
-	fmt.Printf("Loaded config: '%s'\n", file.Name())
 
 	var cfg Config
 	decoder := yaml.NewDecoder(file)
 	if err := decoder.Decode(&cfg); err != nil {
 		return nil, err
 	}
+
+  if cfg.Server.DevMode {
+    fmt.Printf("Loaded config: '%+v'\n", cfg)
+  }
 
 	return &cfg, nil
 }

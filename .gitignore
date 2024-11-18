@@ -3,5 +3,5 @@ ssl/
 config.yaml
 
 # Volume things
-file-server/uploads/*
+file-server/uploads/**
 !file-server/uploads/example.jpg
