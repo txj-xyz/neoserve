@@ -3,6 +3,5 @@ ssl/
 config.yaml
 
 # Volume things
-uploads/*
-!uploads/example.jpg
-# Golang
+file-server/uploads/*
+!file-server/uploads/example.jpg
