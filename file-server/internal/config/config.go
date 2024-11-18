@@ -4,8 +4,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"gopkg.in/yaml.v3"
+)
+
+var (
+	cfg     *Config
+	cfgOnce sync.Once
 )
 
 // Main server loaded config
@@ -18,8 +24,8 @@ type Config struct {
 
 // Main backend web server config
 type Server struct {
-	Port string `yaml:"port"`
-	DevMode bool `yaml:"devMode"`
+	Port    string `yaml:"port"`
+	DevMode bool   `yaml:"devMode"`
 }
 
 // File uploads etc pathing
@@ -46,18 +52,35 @@ func LoadConfig(filePath string) (*Config, error) {
 	}
 	defer file.Close()
 
-
-	var cfg Config
+	var conf Config
 	decoder := yaml.NewDecoder(file)
-	if err := decoder.Decode(&cfg); err != nil {
+	if err := decoder.Decode(&conf); err != nil {
 		return nil, err
 	}
 
-  if cfg.Server.DevMode {
-    fmt.Printf("Loaded config: '%+v'\n", cfg)
-  }
+	SetConfig(&conf)
 
-	return &cfg, nil
+	// Print the loadded up config in dev mode
+	if conf.Server.DevMode {
+		fmt.Printf("Loaded config: '%+v'\n", conf)
+	}
+
+	return &conf, nil
+}
+
+// Set the global variable of the config
+func SetConfig(config *Config) {
+	cfgOnce.Do(func() { cfg = config })
+}
+
+func GetConfig() *Config {
+	return cfg
+}
+
+// Pretty print JSON
+func (c *Config) Json() string {
+	fmt.Printf("%+v\n", c)
+	return fmt.Sprintf("%+v\n", c)
 }
 
 // Print out a directory structure from a path
