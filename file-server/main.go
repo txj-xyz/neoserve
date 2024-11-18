@@ -28,16 +28,18 @@ var (
 
 func main() {
 	// Load config
-	cfg, err := config.LoadConfig("config.yaml")
+	tmpCfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		fmt.Printf("Error loading config: %s\n", err)
 	}
-	
+	cfg = tmpCfg
+
+	fmt.Printf("Config debug: %s", cfg.Logging.Level)
 	// Create a logger
 	log = logger.NewLogger(cfg.Logging.Level)
 
 	// Show the dir layout in dev mode only
-	if cfg.Server.DevMode {
+	if !cfg.Server.DevMode {
 		log.Debug("Printing out the dir tree for stack testing")
 		config.PrintDirTree("./", "")
 	}
@@ -60,15 +62,17 @@ func main() {
 	r.Use(middleware.URLFormat)
 
 	// Server timeout
-	r.Use(middleware.Timeout(60 * time.Second))
+	r.Use(middleware.Timeout(2 * time.Second))
 
 	// ------------------------ Routes ------------------------
 	// GET Routes
 	r.Get("/", serveIndex)
-	// r.Get("/uploads")
 
 	// POST Routes
-	r.Post("/upload", handleUpload)
+	r.Post(
+		"/upload",
+		handleUpload,
+	)
 
 
 	// Start Server
@@ -127,6 +131,8 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to save file", http.StatusInternalServerError)
 		return
 	}
+
+
 
 	fmt.Fprintf(w, "File uploaded successfully: %s\n", randomName)
 }
