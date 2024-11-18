@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
@@ -18,6 +19,7 @@ type Config struct {
 // Main backend web server config
 type Server struct {
 	Port string `yaml:"port"`
+	DevMode bool `yaml:"devMode"`
 }
 
 // File uploads etc pathing
@@ -53,4 +55,28 @@ func LoadConfig(filePath string) (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+// Print out a directory structure from a path
+func PrintDirTree(path string, indent string) {
+	// Open the directory
+	files, err := os.ReadDir(path)
+	if err != nil {
+		fmt.Println("Error reading directory:", err)
+		return
+	}
+
+	for i, file := range files {
+		// Print the current file or directory
+		if i == len(files)-1 {
+			fmt.Printf("%s└── %s\n", indent, file.Name())
+		} else {
+			fmt.Printf("%s├── %s\n", indent, file.Name())
+		}
+
+		// If it's a directory, recursively print its structure
+		if file.IsDir() {
+			PrintDirTree(filepath.Join(path, file.Name()), indent+"│   ")
+		}
+	}
 }

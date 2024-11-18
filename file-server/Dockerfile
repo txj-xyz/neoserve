@@ -20,7 +20,7 @@ FROM alpine:latest
 # Install reqs
 RUN apk --no-cache add ca-certificates
 
-WORKDIR /root/
+WORKDIR /file-server
 
 COPY --from=builder /file-server/neoserve .
 

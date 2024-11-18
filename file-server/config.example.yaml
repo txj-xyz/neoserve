@@ -1,4 +1,5 @@
 server:
+  devMode: true
   port: "8080"
 
 paths:

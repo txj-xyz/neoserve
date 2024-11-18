@@ -1,20 +1,20 @@
-version: '3.8'
+# version: '3.8'
 
 services:
   # Reverse proxy manager
-  proxy-manager:
-    image: 'jc21/nginx-proxy-manager:latest'
-    restart: unless-stopped
-    ports:
-      - '80:80'
-      - '81:81'
-      - '443:443'
-    volumes:
-      - proxy-data-volume:/data
-      - letsencrypt-volume:/etc/letsencrypt
+  # proxy-manager:
+  #   image: 'jc21/nginx-proxy-manager:latest'
+  #   restart: unless-stopped
+  #   ports:
+  #     - '80:80'
+  #     - '81:81'
+  #     - '443:443'
+  #   volumes:
+  #     - proxy-data-volume:/data
+  #     - letsencrypt-volume:/etc/letsencrypt
 
   file-server:
-    build: ./file-server/file-server
+    build: ./file-server/
     ports:
       - "8080:8080"
     volumes:

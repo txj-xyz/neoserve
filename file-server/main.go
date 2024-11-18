@@ -6,8 +6,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"time"
 
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/txj-xyz/neoserve/file-server/internal/config"
 	"github.com/txj-xyz/neoserve/file-server/internal/logger"
 )
@@ -17,39 +21,71 @@ var (
 	log *logger.Logger
 )
 
+// 	http.HandleFunc("/", serveIndex)
+// 	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(cfg.Paths.Uploads))))
+// 	http.HandleFunc("/upload", handleUpload)
+
+
 func main() {
-	// Load configuration
-	var err error
-	cfg, err = config.LoadConfig("./config.yaml")
+	// Load config
+	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		fmt.Printf("Error loading config: %s\n", err)
-		os.Exit(1)
 	}
-
-	// Initialize logger
+	
+	// Create a logger
 	log = logger.NewLogger(cfg.Logging.Level)
 
-	// Ensure directories exist
-	os.MkdirAll(cfg.Paths.Uploads, os.ModePerm)
-
-	http.HandleFunc("/", serveIndex)
-	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(cfg.Paths.Uploads))))
-	http.HandleFunc("/upload", handleUpload)
-
-	fmt.Printf("Start making web requests with the following auth key: [%s]\n", cfg.Auth.Token)
-	fmt.Printf("Server running on http://localhost:%s\n", cfg.Server.Port)
-	if err := http.ListenAndServe(":"+cfg.Server.Port, nil); err != nil {
-		fmt.Printf("Error starting server: %s\n", err)
+	// Show the dir layout in dev mode only
+	if cfg.Server.DevMode {
+		log.Debug("Printing out the dir tree for stack testing")
+		config.PrintDirTree("./", "")
 	}
+
+	_, err = os.ReadDir(cfg.Paths.Uploads)
+	if err != nil {
+		log.Error("Error, cannot find uploads directory, creating it now")
+		os.MkdirAll(cfg.Paths.Uploads, os.ModePerm)
+	}
+
+	// Create a Router for everything
+	r := chi.NewRouter()
+	
+
+	// Setup middleware
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.URLFormat)
+
+	// Server timeout
+	r.Use(middleware.Timeout(60 * time.Second))
+
+	// ------------------------ Routes ------------------------
+	// GET Routes
+	r.Get("/", serveIndex)
+	// r.Get("/uploads")
+
+	// POST Routes
+	r.Post("/upload", handleUpload)
+
+
+	// Start Server
+	log.Logf("Serving on http://localhost:%s\n", cfg.Server.Port)
+	http.ListenAndServe(":"+cfg.Server.Port, r)
 }
 
 // Server main root page
 func serveIndex(w http.ResponseWriter, r *http.Request) {
-	log.Logf("[GET] [%s] [%s]", r.Host, r.RequestURI)
-	http.ServeFile(w, r, filepath.Join(cfg.Paths.Public, "index.html"))
+
+	// log.Logf("Index file path: %s", filepath.Join(cfg.Paths.Public, "index.html"))
+	// http.ServeFile(w, r, filepath.Join(cfg.Paths.Public, "index.html"))
+	w.Write([]byte("root."))
 }
 
 func handleUpload(w http.ResponseWriter, r *http.Request) {
+
 	// Check for POST method
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -71,10 +107,12 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	log.Debug("Found file: '%s' to upload.", handler.Filename)
 
 	// Generate a random file name
-	randomName := config.GenerateRandomName()
+	randomName := config.GenerateRandomName() + regexp.MustCompile(`\.[a-zA-Z0-9]+$`).FindString(handler.Filename)
+
+	log.Debug("Upload: [IP=%s] [name=%s] [random=%s] [uri=%s]", r.RemoteAddr, handler.Filename, randomName, r.RequestURI)
+
 
 	// Save the file to the upload directory
 	filePath := filepath.Join(cfg.Paths.Uploads, randomName)
