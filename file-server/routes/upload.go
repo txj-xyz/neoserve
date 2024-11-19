@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/txj-xyz/neoserve/file-server/internal/config"
+	"github.com/txj-xyz/neoserve/file-server/internal/webhook"
 )
 
 // Neoserve file uploader thingy
@@ -55,7 +56,11 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Send out a discord webhook log if its enabled
+	link := fmt.Sprintf("%s/v1/files/%s", cfg.Server.GenerateURL(), rnd)
+	webhook.SendWebhookLog(cfg, link, rnd)
 
+	// Done send back a response
 	res := UploadResponse{
 		Status: "OK",
 		Code:   200,
@@ -64,3 +69,4 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(res.ToJSON()))
 
 }
+

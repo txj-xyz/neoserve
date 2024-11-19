@@ -42,6 +42,8 @@ type Auth struct {
 
 type Logging struct {
 	Level string `yaml:"level"`
+	DiscordLoggingEnabled bool `yaml:"discord_webhook_logs"`
+	DiscordWebhookLogging string `yaml:"webhook_url"`
 }
 
 /*

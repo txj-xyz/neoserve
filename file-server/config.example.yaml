@@ -12,3 +12,5 @@ auth:
 
 logging:
   level: "DEBUG" # ERROR | DEBUG | INFO
+  discord_webhook_logs: true
+  webhook_url: "https://discord.com/webhookUrl"
