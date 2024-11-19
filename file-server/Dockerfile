@@ -6,6 +6,7 @@ WORKDIR /file-server
 COPY go.mod go.sum ./
 RUN go mod tidy
 
+# Copy required go files.
 COPY . .
 
 # Build dist

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"gopkg.in/yaml.v3"
@@ -26,6 +27,7 @@ type Config struct {
 type Server struct {
 	Port    string `yaml:"port"`
 	DevMode bool   `yaml:"devMode"`
+	Domain  string `yaml:"domain"`
 }
 
 // File uploads etc pathing
@@ -62,7 +64,7 @@ func LoadConfig(filePath string) (*Config, error) {
 
 	// Print the loadded up config in dev mode
 	if conf.Server.DevMode {
-		fmt.Printf("Loaded config: '%+v'\n", conf)
+		fmt.Printf("-- Config Loaded [%p] --\n%s", &conf, conf.Json())
 	}
 
 	return &conf, nil
@@ -73,14 +75,47 @@ func SetConfig(config *Config) {
 	cfgOnce.Do(func() { cfg = config })
 }
 
+// Fetch the latest config
 func GetConfig() *Config {
+	if cfg.Server.DevMode {
+		fmt.Printf("Retreiving config: [%p]\n", &cfg)
+	}
 	return cfg
 }
 
 // Pretty print JSON
 func (c *Config) Json() string {
-	fmt.Printf("%+v\n", c)
-	return fmt.Sprintf("%+v\n", c)
+	pretty, err := yaml.Marshal(c)
+	if err != nil {
+		return "{}" 
+	}
+	return string(pretty) 
+}
+
+func (p *Paths) UploadsPath() string {
+	pwd, _ := os.Getwd()
+	return filepath.Join(pwd, p.Uploads)
+}
+
+func (p *Paths) PublicPath() string {
+	pwd, _ := os.Getwd()
+	return filepath.Join(pwd, p.Public)
+}
+
+// Generate a FQDN for the instance running
+func (c *Server) GenerateURL() string {
+	if c.DevMode {
+		r := &strings.Builder{}
+		r.WriteString("http://")
+		r.WriteString("localhost:")
+		r.WriteString(c.Port)
+		return r.String()
+	} else {
+		r := &strings.Builder{}
+		r.WriteString("https://")
+		r.WriteString(c.Domain)
+		return r.String()
+	}
 }
 
 // Print out a directory structure from a path

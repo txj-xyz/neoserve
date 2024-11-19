@@ -1,6 +1,7 @@
 server:
-  devMode: true
+  devMode: true 
   port: "8080"
+  domain: "example.com"
 
 paths:
   public: "./public"
