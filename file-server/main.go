@@ -56,23 +56,27 @@ func main() {
 	// ------------------------ Routes ------------------------
 	// GET Routes
 	r.Get("/", serveIndex)
-
-	if cfg.Server.DevMode {
-		log.Debug("Starting local file listener at '/v1/files' in dev mode")
-		httpUpload := http.Dir(cfg.Paths.UploadsPath())
-		routes.FileListing(r, "/v1/files", httpUpload) // View the uploads
-	}
+	routes.FileListing(r, "/v1/files", http.Dir(cfg.Paths.UploadsPath())) // View the uploads
 
 	// POST Routes
 	r.Post("/v1/upload", routes.UploadFile)
 
 	// Start Server
-	log.Logf("Neoserve listening on %s", cfg.Server.GenerateURL())
 
-	err = http.ListenAndServe(":"+cfg.Server.Port, r)
-	if err != nil {
-		fmt.Printf("Error starting neoserver: %s", err)
+	if cfg.Server.DevMode {
+		fmt.Printf("Neoserve DEV listening on %s\n", "http://localhost:8081")
+		err = http.ListenAndServe(":8081", r)
+		if err != nil {
+			fmt.Printf("Error starting dev neoserver: %s\n", err)
+		}
+	} else {
+		fmt.Printf("Neoserve listening on %s\n", cfg.Server.GenerateURL())
+		err = http.ListenAndServe(":"+cfg.Server.Port, r)
+		if err != nil {
+			fmt.Printf("Error starting neoserver: %s\n", err)
+		}
 	}
+	
 }
 
 // Server main root page
