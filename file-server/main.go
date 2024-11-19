@@ -65,7 +65,6 @@ func main() {
 
 	// POST Routes
 	r.Post("/v1/upload", routes.UploadFile)
-	// r.Post("/v2/upload", routes.TestingRoute)
 
 	// Start Server
 	log.Logf("Neoserve listening on %s", cfg.Server.GenerateURL())

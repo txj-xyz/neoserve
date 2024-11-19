@@ -1,14 +1,15 @@
 # version: '3.8'
 
 services:
+  # TODO: Swap with CloudflareD
   # Reverse proxy manager
   # proxy-manager:
   #   image: 'jc21/nginx-proxy-manager:latest'
   #   restart: unless-stopped
   #   ports:
-  #     - '80:80'
+  #     - '7000:80'
   #     - '81:81'
-  #     - '443:443'
+  #     - '7443:443'
   #   volumes:
   #     - proxy-data-volume:/data
   #     - letsencrypt-volume:/etc/letsencrypt
