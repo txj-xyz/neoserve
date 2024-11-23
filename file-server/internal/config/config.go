@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -78,11 +79,16 @@ func SetConfig(config *Config) {
 }
 
 // Fetch the latest config
-func GetConfig() *Config {
+func GetConfig() (*Config, error) {
 	if cfg.Server.DevMode {
 		fmt.Printf("Retreiving config: [%p]\n", &cfg)
 	}
-	return cfg
+	
+	if cfg.Json() == "{}" {
+		return nil, errors.New("failed to load config")
+	} else {
+		return cfg, nil
+	}
 }
 
 // Pretty print JSON

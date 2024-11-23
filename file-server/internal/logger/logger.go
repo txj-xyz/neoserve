@@ -59,7 +59,5 @@ func (l *Logger) Info(message string) {
 }
 
 func (l *Logger) Error(message string) {
-	if l.level == ERROR {
-		l.log.Println("ERROR: " + message)
-	}
+	l.log.Println("ERROR: " + message)
 }

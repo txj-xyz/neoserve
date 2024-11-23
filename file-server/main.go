@@ -60,6 +60,7 @@ func main() {
 
 	// POST Routes
 	r.Post("/v1/upload", routes.UploadFile)
+	r.Post("/api/webhooks/{channelID}/{webhookToken}", routes.DiscordWebhookPassthrough)
 
 	// Start Server
 
@@ -68,12 +69,14 @@ func main() {
 		err = http.ListenAndServe(":8081", r)
 		if err != nil {
 			fmt.Printf("Error starting dev neoserver: %s\n", err)
+			os.Exit(1)
 		}
 	} else {
 		fmt.Printf("Neoserve listening on %s\n", cfg.Server.GenerateURL())
 		err = http.ListenAndServe(":"+cfg.Server.Port, r)
 		if err != nil {
 			fmt.Printf("Error starting neoserver: %s\n", err)
+			os.Exit(1)
 		}
 	}
 	

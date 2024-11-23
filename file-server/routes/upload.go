@@ -25,7 +25,12 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 
 	// Authenticate request
 	authHeader := r.Header.Get("Authorization")
-	cfg := config.GetConfig()
+	cfg, err := config.GetConfig()
+	if err != nil {
+		http.Error(w, "Internal Error Occurred", http.StatusInternalServerError)
+		return
+	}
+
 	if !strings.HasPrefix(authHeader, "Bearer ") || strings.TrimPrefix(authHeader, "Bearer ") != cfg.Auth.Token {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -58,7 +63,7 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 
 	// Send out a discord webhook log if its enabled
 	link := fmt.Sprintf("%s/v1/files/%s", cfg.Server.GenerateURL(), rnd)
-	webhook.SendWebhookLog(cfg, link, rnd)
+	webhook.SendWebhookLog(link, rnd)
 
 	// Done send back a response
 	res := UploadResponse{

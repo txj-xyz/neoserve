@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/txj-xyz/neoserve/file-server/internal/config"
 )
@@ -91,7 +92,13 @@ func (wb *WebhookBuilder) Send(webhookURL string) error {
 
 
 
-func SendWebhookLog(cfg *config.Config, link string, fileName string) {
+func SendWebhookLog(link string, fileName string) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		fmt.Printf("cancelling webhook call: '%s'", err)
+		os.Exit(1)
+	}
+
 	if !cfg.Logging.DiscordLoggingEnabled {
 		return
 	}
@@ -118,7 +125,7 @@ func SendWebhookLog(cfg *config.Config, link string, fileName string) {
 		},
 	}
 
-	err := builder.
+	builder.
 		SetContent("").
 		AddEmbed(embed).
 		Send(cfg.Logging.DiscordWebhookLogging)
