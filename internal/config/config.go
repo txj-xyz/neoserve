@@ -8,12 +8,14 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/txj-xyz/neoserve/file-server/internal/logger"
 	"gopkg.in/yaml.v3"
 )
 
 var (
 	cfg     *Config
 	cfgOnce sync.Once
+	log     *logger.Logger
 )
 
 // Main server loaded config
@@ -42,8 +44,8 @@ type Auth struct {
 }
 
 type Logging struct {
-	Level string `yaml:"level"`
-	DiscordLoggingEnabled bool `yaml:"discord_webhook_logs"`
+	Level                 string `yaml:"level"`
+	DiscordLoggingEnabled bool   `yaml:"discord_webhook_logs"`
 	DiscordWebhookLogging string `yaml:"webhook_url"`
 }
 
@@ -51,6 +53,8 @@ type Logging struct {
 Load up the config file and check for errors
 */
 func LoadConfig(filePath string) (*Config, error) {
+	log = logger.New()
+
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -67,7 +71,11 @@ func LoadConfig(filePath string) (*Config, error) {
 
 	// Print the loadded up config in dev mode
 	if conf.Server.DevMode {
-		fmt.Printf("-- Config Loaded [%p] --\n%s", &conf, conf.Json())
+		// log.Debug("-- Config Loaded [%p] --\n%s", &conf, conf.Json())
+		log.Debug(
+			"config loaded",
+			"status", fmt.Sprintf("%p", &conf),
+		)
 	}
 
 	return &conf, nil
@@ -81,10 +89,14 @@ func SetConfig(config *Config) {
 // Fetch the latest config
 func GetConfig() (*Config, error) {
 	if cfg.Server.DevMode {
-		fmt.Printf("Retreiving config: [%p]\n", &cfg)
+		// fmt.Printf("Retreiving config: [%p]\n", &cfg)
+		log.Info(
+			"grabbing loaded config",
+			"status", fmt.Sprintf("%p", &cfg),
+		)
 	}
-	
-	if cfg.Json() == "{}" {
+
+	if cfg.YAML() == "{}" {
 		return nil, errors.New("failed to load config")
 	} else {
 		return cfg, nil
@@ -92,12 +104,12 @@ func GetConfig() (*Config, error) {
 }
 
 // Pretty print JSON
-func (c *Config) Json() string {
+func (c *Config) YAML() string {
 	pretty, err := yaml.Marshal(c)
 	if err != nil {
-		return "{}" 
+		return "{}"
 	}
-	return string(pretty) 
+	return string(pretty)
 }
 
 func (p *Paths) UploadsPath() string {
@@ -131,7 +143,7 @@ func PrintDirTree(path string, indent string) {
 	// Open the directory
 	files, err := os.ReadDir(path)
 	if err != nil {
-		fmt.Println("Error reading directory:", err)
+		log.Error("failed to read directory", err)
 		return
 	}
 
