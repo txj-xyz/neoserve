@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -15,30 +14,24 @@ import (
 )
 
 var (
-	cfg *config.Config
 	log *logger.Logger
 )
 
-// 	http.HandleFunc("/", serveIndex)
-// 	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(cfg.Paths.Uploads))))
-// 	http.HandleFunc("/upload", handleUpload)
-
 func main() {
 	// Load config
-	tmpCfg, err := config.LoadConfig("config.yaml")
+	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		fmt.Printf("Error loading config: %s\n", err)
 		os.Exit(1)
 	}
-	cfg = tmpCfg
 
 	// Create a logger
-	// log = logger.NewLogger(cfg.Logging.Level)
 	log = logger.New()
 
+	// If the uploads directory doesnt exist then create it
 	_, err = os.ReadDir(cfg.Paths.Uploads)
 	if err != nil {
-		log.Info("Error, cannot find uploads directory, creating it now")
+		log.Error("Error, cannot find uploads directory, creating it now")
 		os.MkdirAll(cfg.Paths.Uploads, os.ModePerm)
 	}
 
@@ -50,41 +43,44 @@ func main() {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(middleware.Timeout(60 * time.Second)) // Set server max timeouts
 
-	// Server timeout
-	r.Use(middleware.Timeout(60 * time.Second))
-
-	// ------------------------ Routes ------------------------
 	// GET Routes
-	r.Get("/", serveIndex)
+	r.Get("/", routes.ServeIndex)
 	routes.FileListing(r, "/v1/files", http.Dir(cfg.Paths.UploadsPath())) // View the uploads
 
 	// POST Routes
 	r.Post("/v1/upload", routes.UploadFile)
 	r.Post("/api/webhooks/{channelID}/{webhookToken}", routes.DiscordWebhookPassthrough)
 
-	// Start Server
-
-	if cfg.Server.DevMode {
-		log.Info("Neoserve DEV Running", "url", "http://localhost:8081")
-		err = http.ListenAndServe(":8081", r)
-		if err != nil {
-			log.Error("error starting dev neoserver", err)
-			os.Exit(1)
-		}
-	} else {
-		// fmt.Printf("Neoserve listening on %s\n", cfg.Server.GenerateURL())
-		log.Info("Neoserve Running", "url", cfg.Server.GenerateURL())
-		err = http.ListenAndServe(":"+cfg.Server.Port, r)
-		if err != nil {
-			log.Error("error starting neoserver", err)
-			os.Exit(1)
-		}
-	}
-
+	// Start up neoserve with the router we have
+	Neoserve(r, cfg)
 }
 
-// Server main root page
-func serveIndex(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, filepath.Join(cfg.Paths.PublicPath(), "index.html"))
+// Main starting logic to check for config flags etc
+func Neoserve(r *chi.Mux, cfg *config.Config) {
+
+	log.Debug("loading server components..")
+
+	var listenAddr string = ":" + cfg.Server.Port
+
+	if cfg.Server.DevMode {
+		log.Info(
+			"neoserve starting [DEV MODE]",
+			"port", 8081,
+			"url", "http://localhost:8081",
+		)
+		listenAddr = ":8081"
+	}
+
+	log.Info(
+		"neoserve starting",
+		"port", cfg.Server.Port,
+		"url", cfg.Server.GenerateURL(),
+	)
+	// Start up the web server
+	err := http.ListenAndServe(listenAddr, r)
+	if err != nil {
+		panic(fmt.Errorf("failed to bind port for neoserve: %v", err))
+	}
 }
