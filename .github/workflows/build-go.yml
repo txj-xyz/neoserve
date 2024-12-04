@@ -39,8 +39,8 @@ jobs:
         path: ./build/**
 
     - name: Build and Publish latest Docker image
-      uses: VaultVulp/gp-docker-action@latest
+      uses: TCPShield/gp-docker-action@1.1.13
       with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          image-name: neoserve # Provide only Docker image name, tag will be automatically set to latest
-          dockerfile: Dockerfile
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        image-name: neoserve # Provide only Docker image name, tag will be automatically set to latest
+        dockerfile: Dockerfile
