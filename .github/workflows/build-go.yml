@@ -1,4 +1,4 @@
-name: Build Project
+name: Build Neoserve
 
 on:
   push:
@@ -22,11 +22,11 @@ jobs:
         mkdir -p build/public
         mkdir -p build/uploads
         echo "Copying example config file to build folder"
-        cp config.example.yaml build/config.example.yaml
+        cp -v config.example.yaml build/config.example.yaml
 
         echo "Copying web files to build folder"
-        cp public/* build/public/
-        cp uploads/* build/uploads/
+        cp -v public/* build/public/
+        cp -v uploads/* build/uploads/
 
         echo "Building go project"
         go build -v -o build/neoserve
@@ -35,13 +35,12 @@ jobs:
       if: github.ref == 'refs/heads/main'
       run: |
         VERSION="v1.0.0"
-        git tag -a "$VERSION" -m "🚀 Artefact Release $VERSION"
+        git tag -a "$VERSION" -m "🚀 Neoserve Release $VERSION"
         git push origin "$VERSION"
 
-    - name: Upload Build Binary
+    - name: Upload Neoserve Binaries
       if: github.ref == 'refs/heads/main'
       uses: actions/upload-artifact@v4
       with:
-        name: build-artifact  # Specify a name for the artifact
-        path: ./build/**  # Specify the path to the build output (e.g., ./bin/your-app)
-        retention-days: 30  # Optional: Set retention period for the artifact
+        name: neoserve
+        path: ./build/**
