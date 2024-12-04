@@ -1,0 +1,46 @@
+name: Build Neoserve
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Go Env
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+
+    - name: Build Go Binary
+      run: |
+        mkdir -p build/public
+        mkdir -p build/uploads
+        echo "Copying example config file to build folder"
+        cp -v config.example.yaml build/config.example.yaml
+
+        echo "Copying web files to build folder"
+        cp -v public/* build/public/
+        cp -v uploads/* build/uploads/
+
+        echo "Building go project"
+        go build -v -o build/neoserve
+
+    - name: Create Release Tag
+      if: github.ref == 'refs/heads/main'
+      run: |
+        VERSION="v1.0.0"
+        git tag -a "$VERSION" -m "🚀 Neoserve Release $VERSION"
+        git push origin "$VERSION"
+
+    - name: Upload Neoserve Binaries
+      if: github.ref == 'refs/heads/main'
+      uses: actions/upload-artifact@v4
+      with:
+        name: neoserve
+        path: ./build/**

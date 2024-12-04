@@ -16,13 +16,6 @@ import (
 // Neoserve file uploader thingy
 func UploadFile(w http.ResponseWriter, r *http.Request) {
 
-	// Check to make sure we are using POST
-	// if r.Method != http.MethodPost {
-	// 	fmt.Printf("Invalid request method, %d", http.StatusMethodNotAllowed)
-	// 	http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-	// 	return
-	// }
-
 	// Authenticate request
 	authHeader := r.Header.Get("Authorization")
 	cfg, err := config.GetConfig()
@@ -74,4 +67,3 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(res.ToJSON()))
 
 }
-
