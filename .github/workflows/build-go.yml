@@ -35,8 +35,12 @@ jobs:
       if: github.ref == 'refs/heads/main'
       run: |
         VERSION="v1.0.0"
+        git config user.name "Github Actions"
+        git config user.email "github-actions@github.com"
         git tag -a "$VERSION" -m "🚀 Neoserve Release $VERSION"
         git push origin "$VERSION"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload Neoserve Binaries
       if: github.ref == 'refs/heads/main'
