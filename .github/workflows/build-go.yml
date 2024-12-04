@@ -20,6 +20,9 @@ jobs:
     - name: Build Go Binary
       run: go build -v ./...
 
+    - name: Show build data
+      run: ls -la .
+
     # - name: Create Release Tag
     #   if: github.ref == 'refs/heads/main'
     #   run: |
