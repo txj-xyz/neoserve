@@ -18,15 +18,15 @@ var (
 )
 
 func main() {
-	// Load config
+	// Create a logger
+	log = logger.New()	// Load config
+
+	// Load server config
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		fmt.Printf("Error loading config: %s\n", err)
 		os.Exit(1)
 	}
-
-	// Create a logger
-	log = logger.New()
 
 	// If the uploads directory doesnt exist then create it
 	_, err = os.ReadDir(cfg.Paths.Uploads)
@@ -62,22 +62,15 @@ func Neoserve(r *chi.Mux, cfg *config.Config) {
 
 	log.Debug("loading server components..")
 
-	var listenAddr string = ":" + cfg.Server.Port
+	var listenAddr string = fmt.Sprintf(":%v", cfg.Server.Port)
 
-	if cfg.Server.DevMode {
-		log.Info(
-			"neoserve starting [DEV MODE]",
-			"port", 8081,
-			"url", "http://localhost:8081",
-		)
-		listenAddr = ":8081"
-	}
-
-	log.Info(
+	log.Debug(
 		"neoserve starting",
+		"dev_mode", cfg.Server.DevMode,
 		"port", cfg.Server.Port,
 		"url", cfg.Server.GenerateURL(),
 	)
+	
 	// Start up the web server
 	err := http.ListenAndServe(listenAddr, r)
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/txj-xyz/neoserve/file-server/internal/config"
+	"github.com/txj-xyz/neoserve/file-server/internal/logger"
 	"github.com/txj-xyz/neoserve/file-server/internal/webhook"
 )
 
@@ -23,6 +24,7 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Error Occurred", http.StatusInternalServerError)
 		return
 	}
+	log := logger.New()
 
 	if !strings.HasPrefix(authHeader, "Bearer ") || strings.TrimPrefix(authHeader, "Bearer ") != cfg.Auth.Token {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -30,9 +32,16 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse the uploaded file
+	r.Body = http.MaxBytesReader(w, r.Body, cfg.Server.MaxUpload * 1024 * 1024) // 45Mb limit
 	uploadedFile, handler, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, "Invalid POST payload, missing `file` parameter.", http.StatusBadRequest)
+		log.Error("error found with upload", "err", err)
+		res := UploadResponse{
+			Status: "ERROR",
+			Code:   400,
+			URL:    "null",
+		}
+		http.Error(w, res.ToJSON(), http.StatusBadRequest)
 		return
 	}
 	defer uploadedFile.Close()
@@ -57,6 +66,7 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	// Send out a discord webhook log if its enabled
 	link := fmt.Sprintf("%s/v1/files/%s", cfg.Server.GenerateURL(), rnd)
 	webhook.SendWebhookLog(link, rnd)
+	log.Warn("successfully uploaded file", "link", link)
 
 	// Done send back a response
 	res := UploadResponse{
