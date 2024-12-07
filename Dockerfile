@@ -10,5 +10,7 @@ RUN go build -v -o neoserve .
 FROM busybox
 WORKDIR /opt/neoserve
 COPY --from=builder /opt/neoserve/neoserve /usr/bin/neoserve
+COPY --from=builder /opt/neoserve/uploads/* /opt/neoserve/uploads/
+COPY --from=builder /opt/neoserve/public/* /opt/neoserve/public/
 EXPOSE 8080
 CMD ["neoserve"]
