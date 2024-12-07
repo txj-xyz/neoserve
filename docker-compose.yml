@@ -1,11 +1,13 @@
+name: "neoserve"
+
 services:
-  neoserve:
+  uploader:
     build: ./
     image: neoserve:latest
     ports:
       - "8080"
     volumes:
-      - ./public:/opt/neoserve/public
+      # - ./public:/opt/neoserve/public
       - neoserve-uploads:/opt/neoserve/uploads
       - ./config.yaml:/opt/neoserve/config.yaml
 
