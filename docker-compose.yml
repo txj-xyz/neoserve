@@ -1,16 +1,14 @@
-# version: '3.8'
-
 services:
-  file-server:
+  neoserve:
     build: ./
+    image: neoserve:latest
     ports:
-      - "8080:8080"
+      - "8080"
     volumes:
-      - ./public:/file-server/public
-      - file-server-uploads:/file-server/uploads
-      - ./config.yaml:/file-server/config.yaml
+      - ./public:/opt/neoserve/public
+      - neoserve-uploads:/opt/neoserve/uploads
+      - ./config.yaml:/opt/neoserve/config.yaml
 
 
 volumes:
-  proxy-data-volume:
-  file-server-uploads:
+  neoserve-uploads:

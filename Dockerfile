@@ -1,30 +1,14 @@
-FROM golang:1.23-alpine as builder
-
-WORKDIR /file-server
-
-# Deps / Download etc
+FROM golang:1.23-alpine AS builder
+WORKDIR /opt/neoserve
 COPY go.mod go.sum ./
 RUN go mod tidy
-
-# Copy required go files.
 COPY . .
+RUN go get -d -v ./...
+RUN go build -v -o neoserve .
 
-# Build dist
-RUN go build -o neoserve .
-
-# -------------------------------
-# Production stuff things here
-# -------------------------------
 # Run main image
-FROM alpine:latest
-
-# Install reqs
-RUN apk --no-cache add ca-certificates
-
-WORKDIR /file-server
-
-COPY --from=builder /file-server/neoserve .
-
+FROM busybox
+WORKDIR /opt/neoserve
+COPY --from=builder /opt/neoserve/neoserve /usr/bin/neoserve
 EXPOSE 8080
-
-CMD ["./neoserve"]
+CMD ["neoserve"]
