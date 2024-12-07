@@ -5,7 +5,7 @@ services:
     build: ./
     image: neoserve:latest
     ports:
-      - "8080"
+      - "8080:8080"
     volumes:
       # - ./public:/opt/neoserve/public
       - neoserve-uploads:/opt/neoserve/uploads
