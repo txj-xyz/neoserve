@@ -97,7 +97,7 @@ func (c *Server) GenerateURL() string {
 		return fmt.Sprintf("http://localhost:%d", c.Port)
 	}
 
-	if c.Port == 443 {
+	if c.Port == 443 || c.Port == 8080 {
 		return fmt.Sprintf("https://%s", c.Domain)
 	}
 
