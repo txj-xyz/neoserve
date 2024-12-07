@@ -99,7 +99,7 @@ func SendWebhookLog(link string, fileName string) {
 		os.Exit(1)
 	}
 
-	if !cfg.Logging.DiscordLoggingEnabled {
+	if !cfg.Logging.Discord.Enabled {
 		return
 	}
 
@@ -128,7 +128,7 @@ func SendWebhookLog(link string, fileName string) {
 	builder.
 		SetContent("").
 		AddEmbed(embed).
-		Send(cfg.Logging.DiscordWebhookLogging)
+		Send(cfg.Logging.Discord.WebhookURL)
 	if err != nil {
 		fmt.Printf("Failed to send discord webhook log: %s", err)
 	}

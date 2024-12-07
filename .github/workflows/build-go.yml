@@ -30,17 +30,3 @@ jobs:
 
         echo "Building go project"
         go build -v -o build/neoserve
-
-    - name: Upload Neoserve Binaries
-      if: github.ref == 'refs/heads/main'
-      uses: actions/upload-artifact@v4
-      with:
-        name: neoserve
-        path: ./build/**
-
-    - name: Build and Publish latest Docker image
-      uses: TCPShield/gp-docker-action@1.1.13
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        image-name: neoserve # Provide only Docker image name, tag will be automatically set to latest
-        dockerfile: Dockerfile

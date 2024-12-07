@@ -1,6 +1,7 @@
 server:
-  devMode: true 
-  port: "8080"
+  dev_mode: true 
+  port: 8080
+  max_upload: 1024 # Mb (1GB Default limit)
   domain: "example.com"
 
 paths:
@@ -11,6 +12,6 @@ auth:
   token: "your-secret-token"
 
 logging:
-  level: "DEBUG" # ERROR | DEBUG | INFO
-  discord_webhook_logs: true
-  webhook_url: "https://discord.com/webhookUrl"
+  discord:
+    enabled: true
+    webhook_url: "https://discord.com/webhookUrl" # Optional if disabled

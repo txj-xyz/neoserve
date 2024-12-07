@@ -1,11 +1,9 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/txj-xyz/neoserve/file-server/internal/logger"
@@ -18,36 +16,6 @@ var (
 	log     *logger.Logger
 )
 
-// Main server loaded config
-type Config struct {
-	Server  Server  `yaml:"server"`
-	Paths   Paths   `yaml:"paths"`
-	Auth    Auth    `yaml:"auth"`
-	Logging Logging `yaml:"logging"`
-}
-
-// Main backend web server config
-type Server struct {
-	Port    string `yaml:"port"`
-	DevMode bool   `yaml:"devMode"`
-	Domain  string `yaml:"domain"`
-}
-
-// File uploads etc pathing
-type Paths struct {
-	Public  string `yaml:"public"`
-	Uploads string `yaml:"uploads"`
-}
-
-type Auth struct {
-	Token string `yaml:"token"`
-}
-
-type Logging struct {
-	Level                 string `yaml:"level"`
-	DiscordLoggingEnabled bool   `yaml:"discord_webhook_logs"`
-	DiscordWebhookLogging string `yaml:"webhook_url"`
-}
 
 /*
 Load up the config file and check for errors
@@ -72,10 +40,11 @@ func LoadConfig(filePath string) (*Config, error) {
 	// Print the loadded up config in dev mode
 	if conf.Server.DevMode {
 		// log.Debug("-- Config Loaded [%p] --\n%s", &conf, conf.Json())
-		log.Debug(
+		log.Info(
 			"config loaded",
-			"status", fmt.Sprintf("%p", &conf),
+			"ptr", fmt.Sprintf("%p", &conf),
 		)
+		fmt.Printf("%v", conf.YAML())
 	}
 
 	return &conf, nil
@@ -97,7 +66,7 @@ func GetConfig() (*Config, error) {
 	}
 
 	if cfg.YAML() == "{}" {
-		return nil, errors.New("failed to load config")
+		return nil, fmt.Errorf("failed to load config")
 	} else {
 		return cfg, nil
 	}
@@ -125,39 +94,12 @@ func (p *Paths) PublicPath() string {
 // Generate a FQDN for the instance running
 func (c *Server) GenerateURL() string {
 	if c.DevMode {
-		r := &strings.Builder{}
-		r.WriteString("http://")
-		r.WriteString("localhost:")
-		r.WriteString(c.Port)
-		return r.String()
-	} else {
-		r := &strings.Builder{}
-		r.WriteString("https://")
-		r.WriteString(c.Domain)
-		return r.String()
-	}
-}
-
-// Print out a directory structure from a path
-func PrintDirTree(path string, indent string) {
-	// Open the directory
-	files, err := os.ReadDir(path)
-	if err != nil {
-		log.Error("failed to read directory", err)
-		return
+		return fmt.Sprintf("http://localhost:%d", c.Port)
 	}
 
-	for i, file := range files {
-		// Print the current file or directory
-		if i == len(files)-1 {
-			fmt.Printf("%s└── %s\n", indent, file.Name())
-		} else {
-			fmt.Printf("%s├── %s\n", indent, file.Name())
-		}
-
-		// If it's a directory, recursively print its structure
-		if file.IsDir() {
-			PrintDirTree(filepath.Join(path, file.Name()), indent+"│   ")
-		}
+	if c.Port == 443 {
+		return fmt.Sprintf("https://%s", c.Domain)
 	}
+
+	return fmt.Sprintf("http://%s:%d", c.Domain, c.Port)
 }
