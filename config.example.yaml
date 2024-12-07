@@ -1,17 +1,27 @@
 server:
-  dev_mode: true 
+  # Developer mode
+  dev_mode: true
+  # Port to listen on
   port: 8080
+  # Max File Upload Size
   max_upload: 1024 # Mb (1GB Default limit)
+  # Web Domain to listen on
   domain: "example.com"
 
 paths:
+  # Change where index.html is served from
   public: "./public"
+  # Change where the file uploads are stored
   uploads: "./uploads"
 
 auth:
+  # Password to secure the upload server behind (Bearer Authorization)
   token: "your-secret-token"
 
 logging:
+  # Discord Webhook logging for uploads
   discord:
+    # Disable if you'd like to.
     enabled: true
+    # Created discord webhook URL from your server
     webhook_url: "https://discord.com/webhookUrl" # Optional if disabled
