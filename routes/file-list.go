@@ -44,6 +44,11 @@ func FileListing(r chi.Router, path string, root http.FileSystem) {
 			return
 		}
 
+		if !strings.HasPrefix(authHeader, "Bearer ") || strings.TrimPrefix(authHeader, "Bearer ") != cfg.Auth.Token {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		rctx := chi.RouteContext(r.Context())
 		pathPrefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
 		fs := http.StripPrefix(pathPrefix, http.FileServer(root))
