@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/txj-xyz/neoserve/file-server/internal/config"
 	"github.com/go-chi/chi"
 )
 
