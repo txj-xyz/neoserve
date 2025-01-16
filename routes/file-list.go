@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/txj-xyz/neoserve/file-server/internal/config"
 	"github.com/go-chi/chi"
+	"github.com/txj-xyz/neoserve/file-server/internal/config"
 )
 
 type UploadResponse struct {
@@ -25,19 +25,19 @@ func (r *UploadResponse) ToJSON() string {
 
 // File listing page
 func FileListing(r chi.Router, path string, root http.FileSystem) {
-	
 	if strings.ContainsAny(path, "{}*") {
 		panic("neoserver does not permit any URL params.")
 	}
 
+	// Handle the path and redirect if necessary
 	if path != "/" && path[len(path)-1] != '/' {
 		r.Get(path, http.RedirectHandler(path+"/", http.StatusPermanentRedirect).ServeHTTP)
 		path += "/"
 	}
-	path += "*"
 
+	// Restrict the /v1/files/ directory itself (authentication)
 	r.Get(path, func(w http.ResponseWriter, r *http.Request) {
-		// Authenticate request
+		// Authenticate request for the directory itself
 		authHeader := r.Header.Get("Authorization")
 		cfg, err := config.GetConfig()
 		if err != nil {
@@ -50,6 +50,13 @@ func FileListing(r chi.Router, path string, root http.FileSystem) {
 			return
 		}
 
+		// If authenticated, redirect to the file listing (or serve file list page)
+		http.Redirect(w, r, path+"/", http.StatusFound)
+	})
+
+	// Serve files under /v1/files/ path without authentication (files themselves are not restricted)
+	r.Get(path+"*", func(w http.ResponseWriter, r *http.Request) {
+		// Serve the file if no authentication is required for this file path
 		rctx := chi.RouteContext(r.Context())
 		pathPrefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
 		fs := http.StripPrefix(pathPrefix, http.FileServer(root))
