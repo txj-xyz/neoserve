@@ -29,15 +29,15 @@ func FileListing(r chi.Router, path string, root http.FileSystem) {
 		panic("neoserver does not permit any URL params.")
 	}
 
-	// Redirect if path does not end with '/'
+	// Handle the path and redirect if necessary
 	if path != "/" && path[len(path)-1] != '/' {
 		r.Get(path, http.RedirectHandler(path+"/", http.StatusPermanentRedirect).ServeHTTP)
 		path += "/"
 	}
 
-	// Serve files inside the /v1/files/ directory
-	r.Get(path+"*", func(w http.ResponseWriter, r *http.Request) {
-		// Authenticate request
+	// Restrict the /v1/files/ directory itself (authentication)
+	r.Get(path, func(w http.ResponseWriter, r *http.Request) {
+		// Authenticate request for the directory itself
 		authHeader := r.Header.Get("Authorization")
 		cfg, err := config.GetConfig()
 		if err != nil {
@@ -45,13 +45,18 @@ func FileListing(r chi.Router, path string, root http.FileSystem) {
 			return
 		}
 
-		// Check the Authorization header
 		if !strings.HasPrefix(authHeader, "Bearer ") || strings.TrimPrefix(authHeader, "Bearer ") != cfg.Auth.Token {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		// Use FileServer to serve files
+		// If authenticated, redirect to the file listing (or serve file list page)
+		http.Redirect(w, r, path+"/", http.StatusFound)
+	})
+
+	// Serve files under /v1/files/ path without authentication (files themselves are not restricted)
+	r.Get(path+"*", func(w http.ResponseWriter, r *http.Request) {
+		// Serve the file if no authentication is required for this file path
 		rctx := chi.RouteContext(r.Context())
 		pathPrefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
 		fs := http.StripPrefix(pathPrefix, http.FileServer(root))
