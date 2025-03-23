@@ -19,7 +19,7 @@ var (
 
 func main() {
 	// Create a logger
-	log = logger.New()	// Load config
+	log = logger.New() // Load config
 
 	// Load server config
 	cfg, err := config.LoadConfig("config.yaml")
@@ -51,7 +51,7 @@ func main() {
 
 	// POST Routes
 	r.Post("/v1/upload", routes.UploadFile)
-	r.Post("/api/webhooks/{channelID}/{webhookToken}", routes.DiscordWebhookPassthrough)
+	// r.Post("/api/webhooks/{channelID}/{webhookToken}", routes.DiscordWebhookPassthrough)
 
 	// Start up neoserve with the router we have
 	Neoserve(r, cfg)
@@ -70,7 +70,7 @@ func Neoserve(r *chi.Mux, cfg *config.Config) {
 		"port", cfg.Server.Port,
 		"url", cfg.Server.GenerateURL(),
 	)
-	
+
 	// Start up the web server
 	err := http.ListenAndServe(listenAddr, r)
 	if err != nil {
