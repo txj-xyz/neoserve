@@ -51,7 +51,6 @@ func main() {
 
 	// POST Routes
 	r.Post("/v1/upload", routes.UploadFile)
-	// r.Post("/api/webhooks/{channelID}/{webhookToken}", routes.DiscordWebhookPassthrough)
 
 	// Start up neoserve with the router we have
 	Neoserve(r, cfg)
