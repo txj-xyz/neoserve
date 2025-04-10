@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/txj-xyz/neoserve/file-server/internal/config"
 )
@@ -122,7 +123,12 @@ func SendWebhookLog(link string, fileName string) {
 		},
 	}
 
-	builder.SetContent("").AddEmbed(embed)
+	if strings.HasSuffix(link, ".mp4") {
+		builder.SetContent("**Video Preview**\n" + link).AddEmbed(embed)
+	} else {
+		builder.SetContent("").AddEmbed(embed)
+	}
+
 	err = builder.Send(cfg.Logging.Discord.WebhookURL)
 	if err != nil {
 		fmt.Printf("Failed to send discord webhook log: %s\n", err)
