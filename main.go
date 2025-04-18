@@ -51,6 +51,7 @@ func main() {
 
 	// GET Routes
 	r.Get("/", routes.ServeIndex)
+	routes.FileListing(r, "/v1/files", http.Dir(cfg.Paths.UploadsPath()))
 
 	// Admin panel routes
 	r.Group(func(r chi.Router) {
@@ -92,5 +93,5 @@ func Neoserve(r *chi.Mux, cfg *config.Config) {
 		panic(fmt.Errorf("failed to bind port for neoserve: %v", err))
 	}
 
-  log.Debug("neoserve started OK")
+	log.Debug("neoserve started OK")
 }
