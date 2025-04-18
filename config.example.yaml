@@ -25,3 +25,11 @@ logging:
     enabled: true
     # Created discord webhook URL from your server
     webhook_url: "https://discord.com/webhookUrl" # Optional if disabled
+
+admin:
+  # Admin management panel for handling deleting files
+  username: "admin"
+  password: "changeme"
+  ip_whitelist:
+    - "127.0.0.1"
+    - "192.168.1.0/24"

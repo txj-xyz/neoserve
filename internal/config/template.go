@@ -6,6 +6,7 @@ type Config struct {
 	Paths   Paths   `yaml:"paths"`
 	Auth    Auth    `yaml:"auth"`
 	Logging Logging `yaml:"logging"`
+	Admin   Admin   `yaml:"admin"`
 }
 
 type Server struct {
@@ -29,6 +30,14 @@ type Logging struct {
 }
 
 
+
+// Admin config for panel
+// IPWhitelist is a list of allowed IPs (strings)
+type Admin struct {
+	Username     string   `yaml:"username"`
+	Password     string   `yaml:"password"`
+	IPWhitelist  []string `yaml:"ip_whitelist"`
+}
 
 // Modules
 
