@@ -22,8 +22,6 @@ import (
 
 // Middleware for IP whitelist
 func AdminIPWhitelist(next http.Handler) http.Handler {
-	// Log IP whitelist checks for dev_mode
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfg, _ := config.GetConfig()
 		ip, _, _ := net.SplitHostPort(r.RemoteAddr)
@@ -176,12 +174,6 @@ func AdminUploadFile(w http.ResponseWriter, r *http.Request) {
 	link := cfg.Server.GenerateURL() + "/v1/files/" + rnd
 	if cfg.Logging.Discord.Enabled {
 		imported_webhook := false
-		// Try to import webhook package if not already
-		// (avoid circular import issues)
-		// If not possible, just call webhook.SendWebhookLog(link, rnd)
-		// (Assume webhook.SendWebhookLog is available)
-		// This is a placeholder for actual import logic
-		// If you have import issues, move webhook logic to a helper
 		webhook.SendWebhookLog(link, rnd)
 		imported_webhook = true
 		_ = imported_webhook
@@ -190,7 +182,6 @@ func AdminUploadFile(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"status":"OK","url":"` + link + `"}`))
 }
 
-// FileListResponse is the response structure for file listing with pagination
 type FileListResponse struct {
 	Files      []string `json:"files"`
 	TotalCount int      `json:"totalCount"`
@@ -202,26 +193,25 @@ type FileListResponse struct {
 // List uploaded files (JSON) with pagination support
 func AdminListFiles(w http.ResponseWriter, r *http.Request) {
 	cfg, _ := config.GetConfig()
-	
-	// Parse pagination parameters
+
 	pageStr := r.URL.Query().Get("page")
 	pageSizeStr := r.URL.Query().Get("pageSize")
-	
+
 	page := 1
-	pageSize := 50 // Default page size
-	
+	pageSize := 50
+
 	if pageStr != "" {
 		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
 			page = p
 		}
 	}
-	
+
 	if pageSizeStr != "" {
 		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 && ps <= 200 {
 			pageSize = ps
 		}
 	}
-	
+
 	// Collect all files
 	var allFiles []string
 	filepath.WalkDir(cfg.Paths.Uploads, func(path string, d fs.DirEntry, err error) error {
@@ -230,26 +220,23 @@ func AdminListFiles(w http.ResponseWriter, r *http.Request) {
 		}
 		return nil
 	})
-	
-	// Sort files alphabetically
+
 	sort.Strings(allFiles)
-	
-	// Calculate pagination
 	totalCount := len(allFiles)
 	totalPages := (totalCount + pageSize - 1) / pageSize
-	
+
 	// Adjust page if it's out of bounds
 	if page > totalPages && totalPages > 0 {
 		page = totalPages
 	}
-	
+
 	// Calculate slice bounds
 	start := (page - 1) * pageSize
 	end := start + pageSize
 	if end > totalCount {
 		end = totalCount
 	}
-	
+
 	// Get the slice of files for the current page
 	var files []string
 	if start < totalCount {
@@ -257,7 +244,7 @@ func AdminListFiles(w http.ResponseWriter, r *http.Request) {
 	} else {
 		files = []string{}
 	}
-	
+
 	// Create response
 	response := FileListResponse{
 		Files:      files,
@@ -266,7 +253,7 @@ func AdminListFiles(w http.ResponseWriter, r *http.Request) {
 		PageSize:   pageSize,
 		TotalPages: totalPages,
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
@@ -292,11 +279,11 @@ func AdminBulkDeleteFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-type FileDeleteResult struct {
-	File   string `json:"file"`
-	Status string `json:"status"`
-	Msg    string `json:"msg"`
-}
+	type FileDeleteResult struct {
+		File   string `json:"file"`
+		Status string `json:"status"`
+		Msg    string `json:"msg"`
+	}
 	results := make([]FileDeleteResult, 0, len(files))
 	for _, filename := range files {
 		if filename == "" {
