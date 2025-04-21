@@ -18,15 +18,19 @@ var (
 )
 
 func main() {
-	// Create a logger
-	log = logger.New()	// Load config
-
 	// Load server config
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		fmt.Printf("Error loading config: %s\n", err)
 		os.Exit(1)
 	}
+
+	// Create a logger with level based on dev_mode
+	logLevel := "info"
+	if cfg.Server.DevMode {
+		logLevel = "debug"
+	}
+	log = logger.NewWithLevel(logLevel)
 
 	// If the uploads directory doesnt exist then create it
 	_, err = os.ReadDir(cfg.Paths.Uploads)
@@ -47,11 +51,23 @@ func main() {
 
 	// GET Routes
 	r.Get("/", routes.ServeIndex)
-	routes.FileListing(r, "/v1/files", http.Dir(cfg.Paths.UploadsPath())) // View the uploads
+	routes.FileListing(r, "/v1/files", http.Dir(cfg.Paths.UploadsPath()))
+
+	// Admin panel routes
+	r.Group(func(r chi.Router) {
+		r.Use(routes.AdminIPWhitelist)
+		r.Get("/admin", routes.ServeAdminPanel)
+		r.Post("/admin/login", routes.AdminLogin)
+		r.Get("/admin/logout", routes.AdminLogout)
+		r.With(routes.AdminSessionRequired).Get("/admin/files", routes.AdminListFiles)
+		r.With(routes.AdminSessionRequired).Delete("/admin/delete/{filename}", routes.AdminDeleteFile)
+		r.With(routes.AdminSessionRequired).Post("/admin/delete-multiple", routes.AdminBulkDeleteFiles)
+		r.With(routes.AdminSessionRequired).Post("/admin/session-check", routes.AdminSessionCheck)
+		r.With(routes.AdminSessionRequired).Post("/admin/upload", routes.AdminUploadFile)
+	})
 
 	// POST Routes
 	r.Post("/v1/upload", routes.UploadFile)
-	r.Post("/api/webhooks/{channelID}/{webhookToken}", routes.DiscordWebhookPassthrough)
 
 	// Start up neoserve with the router we have
 	Neoserve(r, cfg)
@@ -70,10 +86,12 @@ func Neoserve(r *chi.Mux, cfg *config.Config) {
 		"port", cfg.Server.Port,
 		"url", cfg.Server.GenerateURL(),
 	)
-	
+
 	// Start up the web server
 	err := http.ListenAndServe(listenAddr, r)
 	if err != nil {
 		panic(fmt.Errorf("failed to bind port for neoserve: %v", err))
 	}
+
+	log.Debug("neoserve started OK")
 }

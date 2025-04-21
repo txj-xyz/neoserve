@@ -25,6 +25,7 @@ func (r *UploadResponse) ToJSON() string {
 
 // File listing page
 func FileListing(r chi.Router, path string, root http.FileSystem) {
+
 	if strings.ContainsAny(path, "{}*") {
 		panic("neoserver does not permit any URL params.")
 	}

@@ -5,19 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
+	"strings"
 
 	"github.com/txj-xyz/neoserve/file-server/internal/config"
 )
 
 // Embed represents a Discord embed structure.
 type Embed struct {
-	Title  string   `json:"title,omitempty"`
-	URL    string   `json:"url,omitempty"`
-	Color  int      `json:"color,omitempty"`
-	Fields []Field  `json:"fields,omitempty"`
-	Footer *Footer  `json:"footer,omitempty"`
-	Image  *Image   `json:"image,omitempty"`
+	Title  string  `json:"title,omitempty"`
+	URL    string  `json:"url,omitempty"`
+	Color  int     `json:"color,omitempty"`
+	Fields []Field `json:"fields,omitempty"`
+	Footer *Footer `json:"footer,omitempty"`
+	Image  *Image  `json:"image,omitempty"`
 }
 
 // Field represents a field in a Discord embed.
@@ -90,13 +90,11 @@ func (wb *WebhookBuilder) Send(webhookURL string) error {
 	return nil
 }
 
-
-
 func SendWebhookLog(link string, fileName string) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		fmt.Printf("cancelling webhook call: '%s'", err)
-		os.Exit(1)
+		return
 	}
 
 	if !cfg.Logging.Discord.Enabled {
@@ -106,14 +104,14 @@ func SendWebhookLog(link string, fileName string) {
 	builder := NewWebhook()
 	embed := Embed{
 		Title: "**File Uploaded**",
-		URL: link,
+		URL:   link,
 		Fields: []Field{
 			{
-				Name: "Name",
+				Name:  "Name",
 				Value: fmt.Sprintf("`%s`", fileName),
 			},
 			{
-				Name: "**Link**",
+				Name:  "**Link**",
 				Value: fmt.Sprintf("[Uncompressed Original](%s)", link),
 			},
 		},
@@ -125,11 +123,14 @@ func SendWebhookLog(link string, fileName string) {
 		},
 	}
 
-	builder.
-		SetContent("").
-		AddEmbed(embed).
-		Send(cfg.Logging.Discord.WebhookURL)
+	if strings.HasSuffix(link, ".mp4") {
+		builder.SetContent("**Video Preview**\n" + link).AddEmbed(embed)
+	} else {
+		builder.SetContent("").AddEmbed(embed)
+	}
+
+	err = builder.Send(cfg.Logging.Discord.WebhookURL)
 	if err != nil {
-		fmt.Printf("Failed to send discord webhook log: %s", err)
+		fmt.Printf("Failed to send discord webhook log: %s\n", err)
 	}
 }

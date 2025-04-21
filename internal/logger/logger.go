@@ -15,8 +15,19 @@ type Logger struct {
 
 // Create a new instance of a logger
 func New() *Logger {
+	return NewWithLevel("debug")
+}
+
+// NewWithLevel creates a logger with the specified level ("debug" or "info")
+func NewWithLevel(level string) *Logger {
+	var slogLevel slog.Level
+	if level == "debug" {
+		slogLevel = slog.LevelDebug
+	} else {
+		slogLevel = slog.LevelInfo
+	}
 	jsonHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
+		Level: slogLevel,
 		AddSource: false,
 	})
 	logger := slog.New(jsonHandler)
@@ -24,7 +35,8 @@ func New() *Logger {
 
 	return &Logger{
 		Logger:  logger,
-		level:   slog.LevelDebug,
+		level:   slogLevel,
 		handler: jsonHandler,
 	}
 }
+

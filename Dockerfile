@@ -1,4 +1,5 @@
 FROM golang:1.23-alpine AS builder
+RUN apk add --no-cache ca-certificates
 WORKDIR /opt/neoserve
 COPY go.mod go.sum ./
 RUN go mod tidy
@@ -7,7 +8,8 @@ RUN go get -d -v ./...
 RUN go build -v -o neoserve .
 
 # Run main image
-FROM busybox
+FROM alpine:3.19
+RUN apk add --no-cache ca-certificates
 WORKDIR /opt/neoserve
 COPY --from=builder /opt/neoserve/neoserve /usr/bin/neoserve
 COPY --from=builder /opt/neoserve/uploads/* /opt/neoserve/uploads/
