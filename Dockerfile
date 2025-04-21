@@ -11,6 +11,7 @@ RUN go build -v -o neoserve .
 FROM alpine:3.19
 RUN apk add --no-cache ca-certificates
 WORKDIR /opt/neoserve
+COPY --from=builder /opt/neoserve/static/* /opt/neoserve/static/
 COPY --from=builder /opt/neoserve/neoserve /usr/bin/neoserve
 COPY --from=builder /opt/neoserve/uploads/* /opt/neoserve/uploads/
 COPY --from=builder /opt/neoserve/public/* /opt/neoserve/public/
