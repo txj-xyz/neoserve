@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/fs"
 	"net"
@@ -24,19 +25,30 @@ import (
 func AdminIPWhitelist(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfg, _ := config.GetConfig()
-		ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+		ipStr, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ipStr = r.RemoteAddr
+		}
+		ip := net.ParseIP(ipStr)
+		if ip == nil {
+			http.Error(w, "Forbidden (Invalid IP)", http.StatusForbidden)
+			return
+		}
+
 		allowed := false
 		for _, allowedIP := range cfg.Admin.IPWhitelist {
 			if strings.Contains(allowedIP, "/") {
 				_, ipnet, err := net.ParseCIDR(allowedIP)
-				parsed := net.ParseIP(ip)
-				if err == nil && ipnet.Contains(parsed) {
+				if err == nil && ipnet.Contains(ip) {
 					allowed = true
 					break
 				}
-			} else if ip == allowedIP {
-				allowed = true
-				break
+			} else {
+				allowedIPParsed := net.ParseIP(allowedIP)
+				if allowedIPParsed != nil && allowedIPParsed.Equal(ip) {
+					allowed = true
+					break
+				}
 			}
 		}
 		if !allowed {
