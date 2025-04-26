@@ -112,8 +112,8 @@ func AdminLogin(w http.ResponseWriter, r *http.Request) {
 			Name:     "admin_session",
 			Value:    token,
 			Path:     "/",
-			Domain:   cfg.Server.Domain,
-			Secure:   true,
+			Secure:   !cfg.Server.DevMode,
+			HttpOnly: true,
 			SameSite: http.SameSiteStrictMode,
 			MaxAge:   86400, // 24 hours
 		})
