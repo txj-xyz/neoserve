@@ -326,9 +326,69 @@ button.danger:hover {
         padding: 0.3em 0.8em;
     }
 }
+.dark-mode {
+  --primary: #60a5fa;
+  --primary-hover: #2563eb;
+  --danger: #f87171;
+  --danger-hover: #ef4444;
+  --bg: #18181b;
+  --card-bg: #23232b;
+  --border: #27272a;
+  --text: #f4f4f5;
+  --muted: #a1a1aa;
+}
+
+.dark-mode body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.dark-mode .card {
+  background: var(--card-bg);
+}
+
+.dark-mode input[type="text"],
+.dark-mode input[type="password"],
+.dark-mode input[type="file"] {
+  background: #23232b;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.dark-mode #filelist li {
+  background: #23232b;
+}
+
+.dark-mode #filelist li:hover {
+  background: #2563eb33;
+}
+
+.dark-mode .preview-copy-btn-header {
+  background: #23232b;
+  color: var(--primary);
+}
+
+.dark-mode .preview-copy-btn-header:hover {
+  background: #2563eb33;
+  color: var(--primary-hover);
+}
+
+.dark-mode #uploadpreview {
+  background: #23232b;
+  border: 1px solid var(--border);
+}
+
+.dark-mode .uploadpreview-preview-img,
+.dark-mode .uploadpreview-preview-video {
+  background: #23232b;
+}
+
 </style>
 </head>
 <body>
+  <div style="position:fixed;top:1em;right:1.5em;z-index:9999;">
+    <button id="darkModeToggle" style="padding:0.5em 1.2em;font-size:1em;border-radius:8px;border:none;cursor:pointer;background:var(--card-bg);color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,0.10);transition:background 0.2s;">🌙 Dark Mode</button>
+  </div>
 <div id="container">
   <div id="login" class="card">
     <h2>Admin Login</h2>
@@ -380,6 +440,34 @@ button.danger:hover {
 
 <script>
 // --- Start Updated JavaScript ---
+// --- Dark Mode Toggle Logic ---
+(function() {
+  const toggleBtn = document.getElementById('darkModeToggle');
+  const root = document.documentElement;
+  // Detect system preference
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  function setDarkMode(on) {
+    if (on) {
+      root.classList.add('dark-mode');
+      toggleBtn.textContent = '☀️ Light Mode';
+    } else {
+      root.classList.remove('dark-mode');
+      toggleBtn.textContent = '🌙 Dark Mode';
+    }
+  }
+  // Load initial mode
+  let dark = localStorage.getItem('neoserve_darkmode');
+  if (dark === null) {
+    dark = prefersDark ? '1' : '0';
+  }
+  setDarkMode(dark === '1');
+  toggleBtn.onclick = function() {
+    const isDark = root.classList.toggle('dark-mode');
+    localStorage.setItem('neoserve_darkmode', isDark ? '1' : '0');
+    setDarkMode(isDark);
+  };
+})();
+// --- End Dark Mode Toggle Logic ---
 
 function bindBulkDeleteControls() {
   const selectAll = document.getElementById('selectAllFiles');
