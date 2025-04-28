@@ -16,7 +16,6 @@ var (
 	log     *logger.Logger
 )
 
-
 /*
 Load up the config file and check for errors
 */
@@ -44,7 +43,6 @@ func LoadConfig(filePath string) (*Config, error) {
 			"config loaded",
 			"ptr", fmt.Sprintf("%p", &conf),
 		)
-		fmt.Printf("%v", conf.YAML())
 	}
 
 	return &conf, nil
