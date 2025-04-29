@@ -271,10 +271,37 @@ button.danger:hover {
 
 .uploadpreview-no-preview {
   color: var(--muted);
-  font-size: 1em;
-  margin-top: 1em;
-  display: block;
+  font-size: 1.1em;
+  margin: 2.5em 0 2em 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
   text-align: center;
+  background: rgba(240,245,255,0.5);
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(37,99,235,0.04);
+  padding: 2em 1em;
+  transition: background 0.2s;
+}
+.uploadpreview-no-preview-icon {
+  font-size: 2.7em;
+  margin-bottom: 0.5em;
+  opacity: 0.7;
+}
+.uploadpreview-no-preview-text {
+  font-size: 1.08em;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+}
+.dark-mode .uploadpreview-no-preview {
+  background: rgba(35,35,43,0.6);
+  color: #a0aec0;
+}
+.dark-mode .uploadpreview-no-preview-text {
+  color: #a0aec0;
 }
 
 .uploadpreview-preview-img,
@@ -628,8 +655,13 @@ function showPanel() {
 function clearPreview() {
   let preview = document.getElementById('uploadpreview');
   if (preview) {
-       // Set the innerHTML to just the default message, replacing any content
-       preview.innerHTML = '<span class="uploadpreview-no-preview">Select a file to preview</span>';
+       // Add a friendly icon and message
+       preview.innerHTML = `
+         <div class="uploadpreview-no-preview">
+           <div class="uploadpreview-no-preview-icon">📁</div>
+           <div class="uploadpreview-no-preview-text">Select a file to preview</div>
+         </div>
+       `;
   }
    // Also remove the header copy button
    const previewHeader = document.getElementById('preview-header');
@@ -1012,8 +1044,9 @@ function uploadFile(e) {
 
 
 function showFilePreview(fileName, fileUrl) {
-  // Clear any existing preview
-  clearPreview();
+  // Clear any existing preview, but do not show the 'Select a file to preview' message
+  let preview = document.getElementById('uploadpreview');
+  if (preview) preview.innerHTML = '';
   
   // Mark the file as selected in the list
   const fileItems = document.querySelectorAll('#filelist li');
@@ -1026,9 +1059,6 @@ function showFilePreview(fileName, fileUrl) {
     }
   });
 
-  // Get the preview container
-  let preview = document.getElementById('uploadpreview');
-  
   // Build the absolute URL
   let absUrl = window.location.origin + '/v1/files/' + encodeURIComponent(fileName);
   if (fileUrl) {
