@@ -271,10 +271,37 @@ button.danger:hover {
 
 .uploadpreview-no-preview {
   color: var(--muted);
-  font-size: 1em;
-  margin-top: 1em;
-  display: block;
+  font-size: 1.1em;
+  margin: 2.5em 0 2em 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
   text-align: center;
+  background: rgba(240,245,255,0.5);
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(37,99,235,0.04);
+  padding: 2em 1em;
+  transition: background 0.2s;
+}
+.uploadpreview-no-preview-icon {
+  font-size: 2.7em;
+  margin-bottom: 0.5em;
+  opacity: 0.7;
+}
+.uploadpreview-no-preview-text {
+  font-size: 1.08em;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+}
+.dark-mode .uploadpreview-no-preview {
+  background: rgba(35,35,43,0.6);
+  color: #a0aec0;
+}
+.dark-mode .uploadpreview-no-preview-text {
+  color: #a0aec0;
 }
 
 .uploadpreview-preview-img,
@@ -510,9 +537,22 @@ function bindBulkDeleteControls() {
       body: JSON.stringify(files)
     })
     .then(r => r.json())
-    .then(() => {
+    .then((results) => {
       deleteBtn.textContent = 'Delete Selected';
-      loadFiles();
+      if (isSearchMode && currentSearchTerm) {
+        // Remove deleted files from allFiles and filteredFiles in search mode
+        const deletedNames = new Set(files);
+        allFiles = allFiles.filter(f => !deletedNames.has(f));
+        filteredFiles = filteredFiles.filter(f => !deletedNames.has(f));
+        // If current page is now empty, go back a page if possible
+        const filesCount = filteredFiles.length;
+        totalPages = Math.max(1, Math.ceil(filesCount / pageSize));
+        if (currentPage > totalPages) currentPage = totalPages;
+        performSearch(currentSearchTerm, false, false, false);
+      } else {
+        // Otherwise fetch from server
+        loadFiles();
+      }
     })
     .catch(err => {
       console.error('Error deleting files:', err);
@@ -628,8 +668,13 @@ function showPanel() {
 function clearPreview() {
   let preview = document.getElementById('uploadpreview');
   if (preview) {
-       // Set the innerHTML to just the default message, replacing any content
-       preview.innerHTML = '<span class="uploadpreview-no-preview">Select a file to preview</span>';
+       // Add a friendly icon and message
+       preview.innerHTML = `
+         <div class="uploadpreview-no-preview">
+           <div class="uploadpreview-no-preview-icon">📁</div>
+           <div class="uploadpreview-no-preview-text">Select a file to preview</div>
+         </div>
+       `;
   }
    // Also remove the header copy button
    const previewHeader = document.getElementById('preview-header');
@@ -824,8 +869,19 @@ function renderFileList(files, currentlyPreviewedFileName) {
     btn.className = 'danger';
     btn.onclick = function(){
       if (confirm('Are you sure you want to delete "' + f + '"?')) {
-         fetch('/admin/delete/' + encodeURIComponent(f), {method:'DELETE', credentials:'same-origin'}).then(()=>{
-             loadFiles(); // Reload list, which will handle preview clearing if needed
+         fetch('/admin/delete/' + encodeURIComponent(f), {method:'DELETE', credentials:'same-origin'}).then(() =>{
+           if (isSearchMode && currentSearchTerm) {
+             // Remove the deleted file from allFiles and filteredFiles
+             allFiles = allFiles.filter(file => file !== f);
+             filteredFiles = filteredFiles.filter(file => file !== f);
+             // If current page is now empty, go back a page if possible
+             const filesCount = filteredFiles.length;
+             totalPages = Math.max(1, Math.ceil(filesCount / pageSize));
+             if (currentPage > totalPages) currentPage = totalPages;
+             performSearch(currentSearchTerm, false, false, false);
+           } else {
+             loadFiles();
+           }
          });
       }
     };
@@ -948,13 +1004,42 @@ function uploadFile(e) {
   uploadmsg.textContent = 'Uploading...';
   // Don't clear preview here, let loadFiles handle it after success/list update
 
-  fetch('/admin/upload', {method:'POST',body:data,credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+  fetch('/admin/upload', {method:'POST',body:data,credentials:'same-origin'}).then(r=>r.json()).then(async d=>{
     if(d.status==='OK' && d.url) {
       uploadmsg.textContent = 'Upload successful!';
       let fileUrl = d.url;
       let fileName = fileUrl.split('/').pop();
       lastUploaded = fileName;
-      loadFiles(); // Reload the file list FIRST
+
+      // --- New logic: Find the correct page for the new file and switch to it ---
+      try {
+        // Fetch all filenames (sorted as in backend)
+        let allFilesResp = await fetch('/admin/files?page=1&pageSize=10000', {credentials:'same-origin'});
+        let allFilesData = await allFilesResp.json();
+        let allFilesList = allFilesData.files || [];
+        let sortedFiles = allFilesList.slice().sort(); // backend sorts
+        let index = sortedFiles.indexOf(fileName);
+        if (index !== -1) {
+          let targetPage = Math.floor(index / pageSize) + 1;
+          currentPage = targetPage;
+        }
+      } catch (err) {
+        console.warn('Could not determine correct page for uploaded file:', err);
+      }
+      // Now reload the file list for the correct page
+      await loadFiles();
+      // --- Update allFiles and search state after upload ---
+      try {
+        let allFilesResp2 = await fetch('/admin/files?page=1&pageSize=10000', {credentials:'same-origin'});
+        let allFilesData2 = await allFilesResp2.json();
+        allFiles = allFilesData2.files || [];
+        allFilesLoaded = true;
+        if (isSearchMode && currentSearchTerm) {
+          performSearch(currentSearchTerm, true, false, false);
+        }
+      } catch (err) {
+        console.warn('Could not update allFiles after upload:', err);
+      }
       // Show preview AFTER list is loaded and selection is potentially set
       showFilePreview(fileName, fileUrl);
 
@@ -993,9 +1078,11 @@ function uploadFile(e) {
 }
 
 
+
 function showFilePreview(fileName, fileUrl) {
-  // Clear any existing preview
-  clearPreview();
+  // Clear any existing preview, but do not show the 'Select a file to preview' message
+  let preview = document.getElementById('uploadpreview');
+  if (preview) preview.innerHTML = '';
   
   // Mark the file as selected in the list
   const fileItems = document.querySelectorAll('#filelist li');
@@ -1008,9 +1095,6 @@ function showFilePreview(fileName, fileUrl) {
     }
   });
 
-  // Get the preview container
-  let preview = document.getElementById('uploadpreview');
-  
   // Build the absolute URL
   let absUrl = window.location.origin + '/v1/files/' + encodeURIComponent(fileName);
   if (fileUrl) {

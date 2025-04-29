@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/fs"
 	"net"
@@ -209,6 +210,8 @@ func AdminListFiles(w http.ResponseWriter, r *http.Request) {
 	pageStr := r.URL.Query().Get("page")
 	pageSizeStr := r.URL.Query().Get("pageSize")
 
+	fmt.Println(pageStr, pageSizeStr)
+
 	page := 1
 	pageSize := 50
 
@@ -219,7 +222,7 @@ func AdminListFiles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if pageSizeStr != "" {
-		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 && ps <= 200 {
+		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 {
 			pageSize = ps
 		}
 	}
