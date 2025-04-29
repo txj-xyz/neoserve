@@ -222,7 +222,7 @@ func AdminListFiles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if pageSizeStr != "" {
-		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 && ps <= 200 {
+		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 {
 			pageSize = ps
 		}
 	}
