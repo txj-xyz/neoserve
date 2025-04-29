@@ -948,13 +948,30 @@ function uploadFile(e) {
   uploadmsg.textContent = 'Uploading...';
   // Don't clear preview here, let loadFiles handle it after success/list update
 
-  fetch('/admin/upload', {method:'POST',body:data,credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+  fetch('/admin/upload', {method:'POST',body:data,credentials:'same-origin'}).then(r=>r.json()).then(async d=>{
     if(d.status==='OK' && d.url) {
       uploadmsg.textContent = 'Upload successful!';
       let fileUrl = d.url;
       let fileName = fileUrl.split('/').pop();
       lastUploaded = fileName;
-      loadFiles(); // Reload the file list FIRST
+
+      // --- New logic: Find the correct page for the new file and switch to it ---
+      try {
+        // Fetch all filenames (sorted as in backend)
+        let allFilesResp = await fetch('/admin/files?page=1&pageSize=10000', {credentials:'same-origin'});
+        let allFilesData = await allFilesResp.json();
+        let allFilesList = allFilesData.files || [];
+        let sortedFiles = allFilesList.slice().sort(); // backend sorts
+        let index = sortedFiles.indexOf(fileName);
+        if (index !== -1) {
+          let targetPage = Math.floor(index / pageSize) + 1;
+          currentPage = targetPage;
+        }
+      } catch (err) {
+        console.warn('Could not determine correct page for uploaded file:', err);
+      }
+      // Now reload the file list for the correct page
+      await loadFiles();
       // Show preview AFTER list is loaded and selection is potentially set
       showFilePreview(fileName, fileUrl);
 
@@ -991,6 +1008,7 @@ function uploadFile(e) {
   });
   return false; // Prevent default form submission
 }
+
 
 
 function showFilePreview(fileName, fileUrl) {
