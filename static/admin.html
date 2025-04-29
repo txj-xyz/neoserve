@@ -537,9 +537,22 @@ function bindBulkDeleteControls() {
       body: JSON.stringify(files)
     })
     .then(r => r.json())
-    .then(() => {
+    .then((results) => {
       deleteBtn.textContent = 'Delete Selected';
-      loadFiles();
+      if (isSearchMode && currentSearchTerm) {
+        // Remove deleted files from allFiles and filteredFiles in search mode
+        const deletedNames = new Set(files);
+        allFiles = allFiles.filter(f => !deletedNames.has(f));
+        filteredFiles = filteredFiles.filter(f => !deletedNames.has(f));
+        // If current page is now empty, go back a page if possible
+        const filesCount = filteredFiles.length;
+        totalPages = Math.max(1, Math.ceil(filesCount / pageSize));
+        if (currentPage > totalPages) currentPage = totalPages;
+        performSearch(currentSearchTerm, false, false, false);
+      } else {
+        // Otherwise fetch from server
+        loadFiles();
+      }
     })
     .catch(err => {
       console.error('Error deleting files:', err);
