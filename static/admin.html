@@ -869,8 +869,19 @@ function renderFileList(files, currentlyPreviewedFileName) {
     btn.className = 'danger';
     btn.onclick = function(){
       if (confirm('Are you sure you want to delete "' + f + '"?')) {
-         fetch('/admin/delete/' + encodeURIComponent(f), {method:'DELETE', credentials:'same-origin'}).then(()=>{
-             loadFiles(); // Reload list, which will handle preview clearing if needed
+         fetch('/admin/delete/' + encodeURIComponent(f), {method:'DELETE', credentials:'same-origin'}).then(() =>{
+           if (isSearchMode && currentSearchTerm) {
+             // Remove the deleted file from allFiles and filteredFiles
+             allFiles = allFiles.filter(file => file !== f);
+             filteredFiles = filteredFiles.filter(file => file !== f);
+             // If current page is now empty, go back a page if possible
+             const filesCount = filteredFiles.length;
+             totalPages = Math.max(1, Math.ceil(filesCount / pageSize));
+             if (currentPage > totalPages) currentPage = totalPages;
+             performSearch(currentSearchTerm, false, false, false);
+           } else {
+             loadFiles();
+           }
          });
       }
     };
@@ -1017,6 +1028,18 @@ function uploadFile(e) {
       }
       // Now reload the file list for the correct page
       await loadFiles();
+      // --- Update allFiles and search state after upload ---
+      try {
+        let allFilesResp2 = await fetch('/admin/files?page=1&pageSize=10000', {credentials:'same-origin'});
+        let allFilesData2 = await allFilesResp2.json();
+        allFiles = allFilesData2.files || [];
+        allFilesLoaded = true;
+        if (isSearchMode && currentSearchTerm) {
+          performSearch(currentSearchTerm, true, false, false);
+        }
+      } catch (err) {
+        console.warn('Could not update allFiles after upload:', err);
+      }
       // Show preview AFTER list is loaded and selection is potentially set
       showFilePreview(fileName, fileUrl);
 
